@@ -1,3 +1,10 @@
+#!/usr/bin/python
+
+# this is a simple script to extract all variable names from one or more python
+# source files and split the variable names into chunks (e.g., camelcase). It is
+# designed to be used to analyze a bunch of your source code so you can add words
+# you tend to use frequently when programming to dragon.
+
 import ast as parser, ast, re, sys
 
 names = set()

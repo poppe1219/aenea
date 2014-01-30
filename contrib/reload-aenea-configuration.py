@@ -1,5 +1,5 @@
 import sys
 sys.path.append("C:\NatLink\NatLink\MacroSystem")
-import config
+import reloadconfig
 
-config.reload_aenea_configuration()
+reloadconfig.reload_aenea_configuration()

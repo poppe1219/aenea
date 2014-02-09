@@ -8,6 +8,10 @@ import jsonrpclib
 import jsonrpclib.SimpleJSONRPCServer
 
 import config
+try:
+    from mouse_grid import mouse_grid_dispatcher
+except ImportError:
+    mouse_grid_dispatcher = lambda params: None
 
 _MOUSE_BUTTONS = {"left":1, "middle":2, "right":3, "wheelup":4, "wheeldown":5}
 _MOUSE_CLICKS = {"click":"click", "down":"mousedown", "up":"mouseup"}
@@ -295,6 +299,7 @@ def list_rpc_commands():
     "move_mouse":move_mouse,
     "server_info":server_info,
     "pause":pause,
+    "mouse_grid_dispatcher":mouse_grid_dispatcher
   }
   return _RPC_COMMANDS
 

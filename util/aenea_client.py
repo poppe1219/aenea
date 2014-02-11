@@ -43,6 +43,7 @@ class AeneaClient(tk.Tk):
         self.aenea_worker_active = False
         self.wm_title("Aenea client - Dictation capturing")
         self.geometry('400x600+400+0')
+        self.overrideredirect(True)
         self.wait_visibility(self)
         note = ttk.Notebook(self)
         self.tab1 = tk.Frame(note)
@@ -75,6 +76,12 @@ class AeneaClient(tk.Tk):
                 variable=self.display_entered_text
             )
         self.checkbox1.pack(side=tk.LEFT)
+        self.button4 = tk.Button(
+                w,
+                text=u"Close",
+                command=self.exit
+            )
+        self.button4.pack(side=tk.RIGHT)
 
         dFont = tkFont.Font(family="Tahoma", size=8)
 
@@ -191,6 +198,9 @@ class AeneaClient(tk.Tk):
             # Flush buffer. Note that RPC calls block.
             self.client.execute_batch(commands._commands)
 
+    def exit(self):
+        self.quit()
+
 
 if __name__ == "__main__":
     try:
@@ -202,3 +212,7 @@ if __name__ == "__main__":
 
     root = AeneaClient(ip, port)
     root.mainloop()
+    root.destroy()
+    root.quit()
+    print("Exiting Aenea client")
+    sys.exit()

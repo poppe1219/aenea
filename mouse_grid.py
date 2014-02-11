@@ -76,7 +76,8 @@ def mouse_grid(attributes):
     """Creates new or reuses grid windows. Can also delegate positioning."""
     global MONITORS
     global GRID_WINDOWS
-    return
+    for key, window in GRID_WINDOWS.items():
+        window.refresh()
 
 
 def hide_grids(attributes):
@@ -174,7 +175,7 @@ def mouse_drag(attributes):
     print("mouse_drag: %s" % attributes)
 
 
-# Initiate the information about monitors and the grid windows.
+#  Initialize the information about monitors and the grid windows.
 if not MONITORS:
     MONITORS = _get_monitors()
 elif not MONITORS:

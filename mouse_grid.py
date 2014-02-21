@@ -5,16 +5,28 @@ import re
 import grid_base
 import config
 
-GRID_WINDOWS = {}
-MONITORS = {}
-MONITOR_SELECTED = None
-MOUSE_MARK_POSITION = None
+
+class GridStates:
+    NothingSelected = 0
+    MonitorsSelected = 1
+
+
+GRID_DATA = {
+    "grid_windows": {},
+    "monitors": {},
+    "mark_position": {},
+    "monitor_selected": None,
+    "grid_state": GridStates.NothingSelected,
+}
 
 
 def _get_monitors():
-    args = ["xrandr", "-q", "-d", ":0"]
-    proc = subprocess.Popen(args, stdout=subprocess.PIPE)
-    return _parse_xrandr_output(proc.stdout.read())
+    try:
+        args = ["xrandr", "-q", "-d", ":0"]
+        proc = subprocess.Popen(args, stdout=subprocess.PIPE)
+        return _parse_xrandr_output(proc.stdout.read())
+    except:
+        return None
 
 
 def _parse_xrandr_output(output):
@@ -47,8 +59,9 @@ def _parse_xrandr_output(output):
     return monitors
 
 
-def _create_grid_windows(monitors):
-    for key, monitor in MONITORS.items():
+def _create_grid_windows():
+    global GRID_DATA
+    for key, monitor in GRID_DATA["monitors"].items():
         grid = grid_base.GridConfig(
             positionX=int(monitor["x"]),
             positionY=int(monitor["y"]),
@@ -61,23 +74,44 @@ def _create_grid_windows(monitors):
         gui.deiconify()
         gui.lift()
         gui.focus_force()
-        GRID_WINDOWS[key] = gui
-    if len(GRID_WINDOWS) == 1:
-        GRID_WINDOWS["1"].set_single_monitor()
+        GRID_DATA["grid_windows"][key] = gui
+    if len(GRID_DATA["grid_windows"]) == 1:
+        GRID_DATA["grid_windows"]["1"].set_single_monitor()
 
 
 def mouse_grid_dispatcher(params=None):
     methodName = params["do"]
     method = globals()[methodName]
-    method(params)
+    print("mouse_grid_dispatcher: %s, arguments: %s" % (methodName, params))
+    try:
+        method(params)
+    except Exception as e:
+        print(e)
 
 
 def mouse_grid(attributes):
     """Creates new or reuses grid windows. Can also delegate positioning."""
-    global MONITORS
-    global GRID_WINDOWS
-    for key, window in GRID_WINDOWS.items():
-        window.refresh()
+    global GRID_DATA
+    gridData = GRID_DATA
+    posAttributes = attributes.get("attributes")
+    pos1 = posAttributes.get(u"pos1")
+    if pos1:
+        if len(gridData["monitors"]) > 1:
+            print("More than one monitor")
+            newAttr = {}
+            gridData["monitor_selected"] = pos1
+            for i in range(1, 9):
+                newAttr["pos%s" % i] = posAttributes["pos%s" % i + 1]
+            newAttr["action"] = posAttributes.get("action")
+            mouse_pos(newAttr)
+        elif posAttributes.get("pos1"):
+            gridData["monitor_selected"] = 1  # Only one monitor.
+            mouse_pos(posAttributes)
+    else:
+        print("No position arguments given.")
+        gridData["monitor_selected"] = None
+        for key, window in GRID_DATA["grid_windows"].items():
+            window.refresh()
 
 
 def hide_grids(attributes):
@@ -87,19 +121,99 @@ def hide_grids(attributes):
     If excludePosition matches the position of a grid, it is not hidden.
 
     """
-    global GRID_WINDOWS
-    global MONITOR_SELECTED
+    global GRID_DATA
     print("hide_grids: %s" % attributes)
     excludePosition = attributes.get("excludePosition", None)
     count = 0
-    for index, win in GRID_WINDOWS.items():
+    for index, win in GRID_DATA["grid_windows"].items():
         if excludePosition and str(excludePosition) == index:
             continue
         if win.winfo_viewable():
             win.withdraw()
         count += 1
-    if count == len(GRID_WINDOWS):
-        MONITOR_SELECTED = None
+    if count == len(GRID_DATA["grid_windows"]):
+        GRID_DATA["monitor_selected"] = None
+
+
+def go(attributes):
+    """Places the mouse at the grid coordinates. Hides the grid."""
+    print("go: %s" % attributes)
+    hide_grids({})
+
+
+def left_click(attributes):
+    """Places the mouse the grid coordinates and clicks the left mouse
+    button.
+
+    """
+    print("left_click: %s" % attributes)
+    hide_grids({})
+
+
+def right_click(attributes):
+    """Places the mouse the grid coordinates and clicks the the right mouse
+    button.
+
+    """
+    print("right_click: %s" % attributes)
+    hide_grids({})
+
+
+def double_click(attributes):
+    """Places the mouse the grid coordinates and double clicks the left mouse
+    button.
+
+    """
+    print("double_click: %s" % attributes)
+    hide_grids({})
+
+
+def control_click(attributes):
+    """Places the mouse the grid coordinates and holds down the CTRL-key while
+    clicking the left mouse button.
+
+    """
+    print("control_click: %s" % attributes)
+    hide_grids({})
+
+
+def shift_click(attributes):
+    """Places the mouse the grid coordinates and holds down the SHIFT-key while
+    clicking the left mouse button.
+
+    """
+    print("shift_click: %s" % attributes)
+    hide_grids({})
+
+
+def mouse_mark(attributes):
+    """Remembers the grid coordinates, to be used as a start position for
+    mouse drag.
+
+    """
+    print("mouse_mark: %s" % attributes)
+    hide_grids({})
+
+
+def mouse_drag(attributes):
+    """Holds down the left mouse button while moving the mouse mouse from a
+    previous position to the current position.
+
+    """
+    print("mouse_drag: %s" % attributes)
+    hide_grids({})
+
+
+actions = {
+    "[left] click": left_click,
+    "right click": right_click,
+    "double click": double_click,
+    "control click": control_click,
+    "shift click": shift_click,
+    "mark": mouse_mark,
+    "drag": mouse_drag,
+    "go": go,
+}
 
 
 def mouse_pos(attributes):
@@ -111,77 +225,52 @@ def mouse_pos(attributes):
     grid is moved into.
 
     """
-    print("mouse_pos: %s" % attributes)
+    global GRID_DATA
+    gridData = GRID_DATA
+    attributeIndex = 1
+    if not gridData["monitor_selected"]:
+        position = gridData["pos1"]
+        if position > len(gridData["monitors"]):
+            return
+        gridData["monitor_selected"] = position
+        attributeIndex = 2
+        for index, window in GRID_DATA["grid_windows"].items():
+            if not index == gridData["monitor_selected"]:
+                window.clear()
+    win = gridData["monitors"][gridData["monitor_selected"] - 1]
+    for index in range(attributeIndex, 10):
+        position = attributes.get("pos%s" % index)
+        if position:
+            _reposition_grid(win, position)
+    action = attributes.get("action")
+    if action:
+        actions[action]
+        gridData["monitor_selected"] = None
 
 
-def go(attributes):
-    """Places the mouse at the grid coordinates. Hides the grid."""
-    print("go: %s" % attributes)
+def _reposition_grid(win, section):
+    """Repositions the grid window to a specified section in the grid.
 
-
-def left_click(attributes):
-    """Places the mouse the grid coordinates and clicks the left mouse
-    button.
-
-    """
-    print("left_click: %s" % attributes)
-
-
-def right_click(attributes):
-    """Places the mouse the grid coordinates and clicks the the right mouse
-    button.
-
-    """
-    print("right_click: %s" % attributes)
-
-
-def double_click(attributes):
-    """Places the mouse the grid coordinates and double clicks the left mouse
-    button.
-
-    """
-    print("double_click: %s" % attributes)
-
-
-def control_click(attributes):
-    """Places the mouse the grid coordinates and holds down the CTRL-key while
-    clicking the left mouse button.
+    If the grid is smaller than 25 pixels across, the grid is not repositioned
+    into a section, but instead moved one section width in the direction of
+    the selected section.
 
     """
-    print("control_click: %s" % attributes)
-
-
-def shift_click(attributes):
-    """Places the mouse the grid coordinates and holds down the SHIFT-key while
-    clicking the left mouse button.
-
-    """
-    print("shift_click: %s" % attributes)
-
-
-def mouse_mark(attributes):
-    """Remembers the grid coordinates, to be used as a start position for
-    mouse drag.
-
-    """
-    print("mouse_mark: %s" % attributes)
-
-
-def mouse_drag(attributes):
-    """Holds down the left mouse button while moving the mouse mouse from a
-    previous position to the current position.
-
-    """
-    print("mouse_drag: %s" % attributes)
+    grid = win.get_grid()
+    if grid.width > 25:
+        grid.recalculate_to_section(section)
+        grid.calculate_axis()
+    else:
+        grid.move_to_section(section)
 
 
 #  Initialize the information about monitors and the grid windows.
-if not MONITORS:
-    MONITORS = _get_monitors()
-elif not MONITORS:
-    MONITORS = config.MONITORS
-if not GRID_WINDOWS:
-    _create_grid_windows(MONITORS)
+if not GRID_DATA["monitors"]:
+    GRID_DATA["monitors"] = _get_monitors()
+if not GRID_DATA["monitors"]:
+    GRID_DATA["monitors"] = config.MONITORS
+if not GRID_DATA["grid_windows"]:
+    _create_grid_windows()
     hide_grids({})
 
 

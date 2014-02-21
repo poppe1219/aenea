@@ -139,6 +139,12 @@ class TransparentWin(tk.Tk):
     def set_single_monitor(self):
         self._single_monitor = True
 
+    def clear(self):
+        self.deiconify()  # Quirk: Secondary window won't refresh without this.
+        self._canvas.delete("all")
+        self.update()
+        self.deiconify()
+
     def refresh(self, monitorSelected=False):
         self._timestamp = time.time()
         self.deiconify()  # Quirk: Secondary window won't refresh without this.

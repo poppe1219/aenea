@@ -149,7 +149,7 @@ class TransparentWin(tk.Tk):
         self._timestamp = time.time()
         self.deiconify()  # Quirk: Secondary window won't refresh without this.
         self._canvas.delete("all")
-        self.wm_geometry(self._grid.get_geometry_string())
+#         self.wm_geometry(self._grid.get_geometry_string())
         self.draw_grid(monitorSelected)
         self.deiconify()
         self.lift()

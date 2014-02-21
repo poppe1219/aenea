@@ -5,6 +5,12 @@ import config
 class Proxy(object):
   def __init__(self, host, port):
     self.server = jsonrpclib.Server("http://%s:%i" % (host, port))
+    self._server = jsonrpclib.Server("http://%s:%i" % (host, 8888))  # develop
+
+  def toggle_server(self):
+      temp = self.server
+      self.server = self._server
+      self._server = temp
 
   def execute_batch(self, batch):
     if config.USE_MULTIPLE_ACTIONS:

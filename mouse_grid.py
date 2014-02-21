@@ -1,5 +1,6 @@
-import subprocess
 import re
+import subprocess
+import traceback
 # import json
 
 import grid_base
@@ -85,8 +86,8 @@ def mouse_grid_dispatcher(params=None):
     print("mouse_grid_dispatcher: %s, arguments: %s" % (methodName, params))
     try:
         method(params)
-    except Exception as e:
-        print(e)
+    except Exception:
+        traceback.print_exc()
 
 
 def mouse_grid(attributes):
@@ -101,7 +102,9 @@ def mouse_grid(attributes):
             newAttr = {}
             gridData["monitor_selected"] = pos1
             for i in range(1, 9):
-                newAttr["pos%s" % i] = posAttributes["pos%s" % i + 1]
+                value = posAttributes.get("pos%d" % (i + 1))
+                if value:
+                    newAttr["pos%d" % i] = value
             newAttr["action"] = posAttributes.get("action")
             mouse_pos(newAttr)
         elif posAttributes.get("pos1"):
@@ -110,7 +113,7 @@ def mouse_grid(attributes):
     else:
         print("No position arguments given.")
         gridData["monitor_selected"] = None
-        for key, window in GRID_DATA["grid_windows"].items():
+        for window in GRID_DATA["grid_windows"].values():
             window.refresh()
 
 
@@ -123,15 +126,12 @@ def hide_grids(attributes):
     """
     global GRID_DATA
     print("hide_grids: %s" % attributes)
-    excludePosition = attributes.get("excludePosition", None)
-    count = 0
-    for index, win in GRID_DATA["grid_windows"].items():
-        if excludePosition and str(excludePosition) == index:
-            continue
+    for win in GRID_DATA["grid_windows"].values():
+        gridConfig = win.get_grid()
+        gridConfig.reset()
         if win.winfo_viewable():
             win.withdraw()
-        count += 1
-    if count == len(GRID_DATA["grid_windows"]):
+    if len(GRID_DATA["monitors"]) > 1:
         GRID_DATA["monitor_selected"] = None
 
 
@@ -227,25 +227,31 @@ def mouse_pos(attributes):
     """
     global GRID_DATA
     gridData = GRID_DATA
-    attributeIndex = 1
+    print("--- mouse_pos ---")
+    print("attributes: %s" % attributes)
+    firstAttr = 1
     if not gridData["monitor_selected"]:
         position = gridData["pos1"]
         if position > len(gridData["monitors"]):
             return
         gridData["monitor_selected"] = position
-        attributeIndex = 2
+        firstAttr = 2
         for index, window in GRID_DATA["grid_windows"].items():
             if not index == gridData["monitor_selected"]:
                 window.clear()
-    win = gridData["monitors"][gridData["monitor_selected"] - 1]
-    for index in range(attributeIndex, 10):
-        position = attributes.get("pos%s" % index)
+    print("monitor_selected: %d" % gridData["monitor_selected"])
+    print("firstAttr: %d" % firstAttr)
+    win = gridData["grid_windows"][str(gridData["monitor_selected"])]
+    for index in range(firstAttr, 10):
+        position = attributes.get("pos%d" % index)
         if position:
             _reposition_grid(win, position)
     action = attributes.get("action")
     if action:
         actions[action]
         gridData["monitor_selected"] = None
+    else:
+        win.refresh()
 
 
 def _reposition_grid(win, section):
@@ -256,6 +262,9 @@ def _reposition_grid(win, section):
     the selected section.
 
     """
+    print("--- _reposition_grid ---")
+    print("win: %s" % win)
+    print("section: %d" % section)
     grid = win.get_grid()
     if grid.width > 25:
         grid.recalculate_to_section(section)

@@ -1,5 +1,3 @@
-# import win32api
-# import win32con
 import Tkinter as tk
 from Tkconstants import *  # @UnusedWildImport
 import time
@@ -21,6 +19,16 @@ class GridConfig:
         self.width = self.monitorWidth
         self.height = self.monitorHeight
         self.calculate_axis()
+
+    def position_is_inside(self, positionX, positionY):
+        minimumX = self.monitorPositionX
+        maximumX = self.monitorPositionX + self.monitorWidth
+        minimumY = self.monitorPositionY
+        maximumY = self.monitorPositionY + self.monitorHeight
+        if positionX >= minimumX and positionX <= maximumX:
+            if positionY >= minimumY and positionY <= maximumY:
+                return (positionX - minimumX, positionY - minimumY)
+        return None
 
     def get_geometry_string(self):
         geometry = "%dx%d+%d+%d" % (self.width, self.height, self.positionX,
@@ -161,6 +169,26 @@ class TransparentWin(tk.Tk):
             self.draw_monitor_number()
         elif self._grid.width > 80 and self._grid.height > 80:
             self._draw_section_numbers()
+
+    def draw_mark(self, positionX, positionY):
+        print("draw_mark", positionX, positionY)
+        position = self._grid.position_is_inside(positionX, positionY)
+        if position:
+            positionX = position[0] - 1
+            positionY = position[1]
+            radius = 5
+            self._canvas.create_line(positionX - radius,
+                                     positionY,
+                                     positionX + radius + 1,
+                                     positionY,
+                                     fill="red")
+            self._canvas.create_line(positionX,
+                                     positionY - radius,
+                                     positionX,
+                                     positionY + radius + 1,
+                                     fill="red")
+            self.update()
+            self.deiconify()
 
     def _draw_lines(self):
         (relativeX, relativeY) = self._grid.get_relative_position()

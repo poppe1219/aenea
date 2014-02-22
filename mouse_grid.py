@@ -115,6 +115,9 @@ def mouse_grid(attributes):
             gridConfig = window.get_grid()
             gridConfig.reset()
             window.refresh()
+            mark = gridData["mark_position"]
+            if mark:
+                window.draw_mark(mark[0], mark[1])
 
 
 def hide_grids(attributes):
@@ -272,6 +275,9 @@ def mouse_pos(attributes):
                 window.refresh()
             else:
                 window.clear()
+            mark = gridData["mark_position"]
+            if mark:
+                window.draw_mark(mark[0], mark[1])
 
 
 def _get_grid_data():

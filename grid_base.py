@@ -34,9 +34,7 @@ class GridConfig:
         xDiff = (self.width - 1) - (columns * stepX)
         yDiff = (self.height - 1) - (columns * stepY)
         self.axisX = self._calculate_one_axis(stepX, columns, xDiff)
-#         print("axis x: ",  self.axisX)
         self.axisY = self._calculate_one_axis(stepY, columns, yDiff)
-#         print("axis y: ",  self.axisY)
 
     def _calculate_one_axis(self, step, columns, diff):
         axis = []
@@ -53,6 +51,11 @@ class GridConfig:
         positionX = self.width / 2
         positionY = self.height / 2
         return (positionX, positionY)
+
+    def get_relative_position(self):
+        x = self.positionX - self.monitorPositionX
+        y = self.positionY - self.monitorPositionY
+        return (x, y)
 
     def get_absolute_centerpoint(self):
         x, y = self.get_relative_center_point()
@@ -76,13 +79,11 @@ class GridConfig:
     def recalculate_to_section(self, section):
         coordinates = self._get_coordinates()
         (x1, y1, x2, y2) = coordinates[section]
-#         print("coordinates:", x1, y1, x2, y2)
         self.positionX = self.positionX + x1
         self.positionY = self.positionY + y1
         self.width = x2 - x1
         self.height = y2 - y1
         self._adjust_edges()
-#         print("New position:", self.positionX, self.positionY)
 
     def _adjust_edges(self):
         if self.positionX > (self.monitorPositionX + 2):
@@ -129,13 +130,6 @@ class TransparentWin(tk.Tk):
         self._monitorNumberItem = None
         self._timestamp = time.time()
         self._single_monitor = False
-#         self.after(1000, self._timer)
-
-#     def _timer(self):
-#         """Timeout after 8 seconds of inactivity."""
-#         if self.winfo_viewable():
-#             if time.time() - self._timestamp > 8:
-#                 self.withdraw()
 
     def get_grid(self):
         return self._grid
@@ -169,29 +163,36 @@ class TransparentWin(tk.Tk):
             self._draw_section_numbers()
 
     def _draw_lines(self):
-        minimumX = self._grid.positionX
-        maximumX = self._grid.positionX + self._grid.width
+        (relativeX, relativeY) = self._grid.get_relative_position()
+        print("relativeX, relativeY:", relativeX, relativeY)
+        minimumX = relativeX
+        maximumX = relativeX + self._grid.width
         axisX = self._grid.axisX
-        minimumY = self._grid.positionY
-        maximumY = self._grid.positionY + self._grid.height
+        minimumY = relativeY
+        maximumY = relativeY + self._grid.height
         axisY = self._grid.axisY
         for index, position in enumerate(axisY):
             fill = "black"
             if index % 3:
                 fill = "gray"
-            self._canvas.create_line(minimumX, position + self._grid.positionY,
-                                     maximumX, position + self._grid.positionY,
+            self._canvas.create_line(minimumX,
+                                     position + relativeY,
+                                     maximumX,
+                                     position + relativeY,
                                      fill=fill)
         for index, position in enumerate(axisX):
             fill = "black"
             if index % 3:
                 fill = "gray"
-            self._canvas.create_line(position + self._grid.positionX, minimumY,
-                                     position + self._grid.positionX, maximumY,
+            self._canvas.create_line(position + relativeX,
+                                     minimumY,
+                                     position + relativeX,
+                                     maximumY,
                                      fill=fill)
         self.update()
 
     def _draw_section_numbers(self):
+        (relativeX, relativeY) = self._grid.get_relative_position()
         axisX = self._grid.axisX
         axisY = self._grid.axisY
         position = 1
@@ -199,9 +200,9 @@ class TransparentWin(tk.Tk):
             for x in range(3):
                 self._canvas.create_text(
                     ((axisX[(3 * x) + 1] + axisX[(3 * x) + 2]) / 2 +
-                     self._grid.positionX),
+                     relativeX),
                     ((axisY[(3 * y) + 1] + axisY[(3 * y) + 2]) / 2 +
-                     self._grid.positionY),
+                     relativeY),
                     text=str(position), font="Arial 10 bold")
                 position += 1
         self.update()

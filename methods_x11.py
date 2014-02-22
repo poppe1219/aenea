@@ -297,7 +297,7 @@ def _wrap_modifiers(modifierList, command):
 
 
 def move_mouse(x, y, reference="absolute", proportional=False, phantom=None,
-    _xdotool=None):
+    dragButton=None, _xdotool=None):
     """Move the mouse to the specified coordinates. reference may be one of
     "absolute", "relative", or "relative_active". if phantom is not None,
     it is a button as click_mouse. If possible, click that location without
@@ -311,14 +311,33 @@ def move_mouse(x, y, reference="absolute", proportional=False, phantom=None,
     command = _MOUSE_MOVE_COMMANDS[reference]
     if command == "mousemove_active":
         command = "mousemove --window %i" % get_active_window()[0]
-    commands = ["%s %f %f" % (command, x, y)]
+    commands = ["%s --sync %f %f" % (command, x, y)]
     if phantom is not None:
         commands.append("click %s" % _MOUSE_BUTTONS[phantom])
         commands.append("mousemove restore")
+    commandString = " ".join(commands)
+    if dragButton:
+        try:
+            button = _MOUSE_BUTTONS[dragButton]
+        except KeyError:
+            button = int(dragButton)
+        commandString = _wrap_mouse_button_drag(button, commandString)
     if _xdotool is not None:
         _xdotool.extend(commands)
     else:
-        run_command(" ".join(commands))
+        run_command(commandString)
+
+
+def _wrap_mouse_button_drag(button, command):
+    newCommand = ""
+    newCommand += "sleep 0.1 && "
+    newCommand += "xdotool mousedown %d && " % button
+    newCommand += "xdotool sleep 0.5 && "
+    newCommand += "xdotool " + command + " && "
+    newCommand += "xdotool sleep 0.1 && "
+    newCommand += "xdotool mouseup %d" % button
+    print(newCommand)
+    return newCommand
 
 
 def pause(amount, _xdotool=None):

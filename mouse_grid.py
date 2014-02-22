@@ -4,7 +4,7 @@ import traceback
 
 import grid_base
 import config
-from methods_x11 import move_mouse, click_mouse, key_press
+from methods_x11 import move_mouse, click_mouse
 
 
 class GridStates:
@@ -112,6 +112,8 @@ def mouse_grid(attributes):
         print("No position arguments given.")
         gridData["monitor_selected"] = None
         for window in gridData["grid_windows"].values():
+            gridConfig = window.get_grid()
+            gridConfig.reset()
             window.refresh()
 
 
@@ -123,7 +125,6 @@ def hide_grids(attributes):
 
     """
     gridData = _get_grid_data()
-    print("hide_grids: %s" % attributes)
     for win in gridData["grid_windows"].values():
         gridConfig = win.get_grid()
         gridConfig.reset()
@@ -135,7 +136,6 @@ def hide_grids(attributes):
 
 def go(attributes):
     """Places the mouse at the grid coordinates. Hides the grid."""
-    print("go: %s" % attributes)
     (x, y) = _get_active_coordinates()
     hide_grids({})
     move_mouse(x, y)
@@ -146,7 +146,6 @@ def left_click(attributes):
     button.
 
     """
-    print("left_click: %s" % attributes)
     (x, y) = _get_active_coordinates()
     hide_grids({})
     move_mouse(x, y)
@@ -158,7 +157,6 @@ def right_click(attributes):
     button.
 
     """
-    print("right_click: %s" % attributes)
     (x, y) = _get_active_coordinates()
     hide_grids({})
     move_mouse(x, y)
@@ -170,7 +168,6 @@ def double_click(attributes):
     button.
 
     """
-    print("double_click: %s" % attributes)
     (x, y) = _get_active_coordinates()
     hide_grids({})
     move_mouse(x, y)
@@ -182,7 +179,6 @@ def control_click(attributes):
     clicking the left mouse button.
 
     """
-    print("control_click: %s" % attributes)
     (x, y) = _get_active_coordinates()
     hide_grids({})
     move_mouse(x, y)
@@ -194,7 +190,6 @@ def shift_click(attributes):
     clicking the left mouse button.
 
     """
-    print("shift_click: %s" % attributes)
     (x, y) = _get_active_coordinates()
     hide_grids({})
     move_mouse(x, y)
@@ -206,7 +201,6 @@ def mouse_mark(attributes):
     mouse drag.
 
     """
-    print("mouse_mark: %s" % attributes)
     (x, y) = _get_active_coordinates()
     hide_grids({})
     move_mouse(x, y)
@@ -219,7 +213,6 @@ def mouse_drag(attributes):
     previous position to the current position.
 
     """
-    print("mouse_drag: %s" % attributes)
     (x, y) = _get_active_coordinates()
     hide_grids({})
     gridData = _get_grid_data()
@@ -255,8 +248,6 @@ def mouse_pos(attributes):
 
     """
     gridData = _get_grid_data()
-    print("--- mouse_pos ---")
-    print("attributes: %s" % attributes)
     firstAttr = 1
     if not gridData["monitor_selected"]:
         position = attributes["pos1"]
@@ -264,23 +255,23 @@ def mouse_pos(attributes):
             return
         gridData["monitor_selected"] = position
         firstAttr = 2
-        for index, window in gridData["grid_windows"].items():
-            if not index == gridData["monitor_selected"]:
-                window.clear()
     print("monitor_selected: %d" % gridData["monitor_selected"])
     print("firstAttr: %d" % firstAttr)
     win = _get_active_grid_window()
-    if win:
-        for index in range(firstAttr, 10):
-            position = attributes.get("pos%d" % index)
-            if position:
-                _reposition_grid(win, position)
-        action = attributes.get("action")
-        if action:
-            actions[action]
-            gridData["monitor_selected"] = None
-        else:
-            win.refresh()
+    for index in range(firstAttr, 10):
+        position = attributes.get("pos%d" % index)
+        if position:
+            _reposition_grid(win, position)
+    action = attributes.get("action")
+    if action:
+        actions[action]
+        gridData["monitor_selected"] = None
+    else:
+        for index, window in gridData["grid_windows"].items():
+            if index == str(gridData["monitor_selected"]):
+                window.refresh()
+            else:
+                window.clear()
 
 
 def _get_grid_data():
@@ -311,9 +302,6 @@ def _reposition_grid(win, section):
     the selected section.
 
     """
-    print("--- _reposition_grid ---")
-    print("win: %s" % win)
-    print("section: %d" % section)
     grid = win.get_grid()
     if grid.width > 25:
         grid.recalculate_to_section(section)

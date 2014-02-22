@@ -58,6 +58,7 @@ _MOD_TRANSLATION = {
     "alt": "Alt_L",
     "shift": "Shift_L",
     "control": "Control_L",
+    "ctrl": "Control_L",
     "super": "Super_L",
     "hyper": "Hyper_L",
     "meta": "Meta_L",
@@ -130,6 +131,7 @@ update_key_translation(_KEY_TRANSLATION)
 
 def run_command(command, executable="xdotool"):
     command_string = "%s %s" % (executable, command)
+    print("run_command:", command_string)
     os.system(command_string)
 
 
@@ -229,7 +231,7 @@ def key_press(key, modifiers=(), direction="press", count=1, count_delay=0,
     if (count_delay is None or count < 2):
         delay = ""
     else:
-        "--delay %i " % count_delay
+        delay = "--delay %i " % count_delay
     modifiers = [_MOD_TRANSLATION.get(mod, mod) for mod in modifiers]
     key_to_press = _KEY_TRANSLATION.get(key, key)
     keys = (["keydown " + key for key in modifiers] +
@@ -258,7 +260,7 @@ def write_text(text, _xdotool=None):
 
 
 def click_mouse(button, direction="click", count=1, count_delay=None,
-    _xdotool=None):
+    modifiers=(), _xdotool=None):
     """Click the mouse button specified. button maybe one of "right", "left",
     "middle", "wheeldown", "wheelup". This X11 server will also accept a
     number.
@@ -267,7 +269,7 @@ def click_mouse(button, direction="click", count=1, count_delay=None,
     if (count_delay is None or count < 2):
         delay = ""
     else:
-        "--delay %i" % count_delay
+        delay = "--delay %i" % count_delay
     repeat = "" if count == 1 else "--repeat %i" % count
     try:
         button = _MOUSE_BUTTONS[button]
@@ -276,11 +278,22 @@ def click_mouse(button, direction="click", count=1, count_delay=None,
 
     command = ("%s %s %s %s" %
              (_MOUSE_CLICKS[direction], delay, repeat, button))
+    if modifiers:
+        modifierList = [_MOD_TRANSLATION.get(mod, mod) for mod in modifiers]
+        command = _wrap_modifiers(modifierList, command)
 
     if _xdotool is not None:
         _xdotool.append(command)
     else:
         run_command(command)
+
+
+def _wrap_modifiers(modifierList, command):
+    newCommand = ""
+    newCommand += "keydown " + " ".join(modifierList)
+    newCommand += " " + command + " "
+    newCommand += "keyup " + " ".join(modifierList)
+    return newCommand
 
 
 def move_mouse(x, y, reference="absolute", proportional=False, phantom=None,

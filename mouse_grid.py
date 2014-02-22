@@ -1,11 +1,10 @@
 import re
 import subprocess
 import traceback
-# import json
 
 import grid_base
 import config
-from methods_x11 import move_mouse, click_mouse
+from methods_x11 import move_mouse, click_mouse, key_press
 
 
 class GridStates:
@@ -137,11 +136,9 @@ def hide_grids(attributes):
 def go(attributes):
     """Places the mouse at the grid coordinates. Hides the grid."""
     print("go: %s" % attributes)
-    win = _get_active_grid_window()
-    gridConfig = win.get_grid()
-    (x, y) = gridConfig.get_absolute_centerpoint()
-    move_mouse(x, y)
+    (x, y) = _get_active_coordinates()
     hide_grids({})
+    move_mouse(x, y)
 
 
 def left_click(attributes):
@@ -150,7 +147,10 @@ def left_click(attributes):
 
     """
     print("left_click: %s" % attributes)
+    (x, y) = _get_active_coordinates()
     hide_grids({})
+    move_mouse(x, y)
+    click_mouse("left")
 
 
 def right_click(attributes):
@@ -159,7 +159,10 @@ def right_click(attributes):
 
     """
     print("right_click: %s" % attributes)
+    (x, y) = _get_active_coordinates()
     hide_grids({})
+    move_mouse(x, y)
+    click_mouse("right")
 
 
 def double_click(attributes):
@@ -168,7 +171,10 @@ def double_click(attributes):
 
     """
     print("double_click: %s" % attributes)
+    (x, y) = _get_active_coordinates()
     hide_grids({})
+    move_mouse(x, y)
+    click_mouse("left", count=2, count_delay=10)
 
 
 def control_click(attributes):
@@ -177,7 +183,12 @@ def control_click(attributes):
 
     """
     print("control_click: %s" % attributes)
+    (x, y) = _get_active_coordinates()
     hide_grids({})
+    move_mouse(x, y)
+#     key_press("",  modifiers=("control",), direction="down")
+    click_mouse("left", modifiers=("control",))
+#     key_press("",  modifiers=("control",), direction="up")
 
 
 def shift_click(attributes):
@@ -269,6 +280,12 @@ def _get_active_grid_window():
         return gridData["grid_windows"][str(selectedMonitor)]
     else:
         return None
+
+
+def _get_active_coordinates():
+    win = _get_active_grid_window()
+    gridConfig = win.get_grid()
+    return gridConfig.get_absolute_centerpoint()
 
 
 def _reposition_grid(win, section):

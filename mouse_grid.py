@@ -5,6 +5,7 @@ import traceback
 
 import grid_base
 import config
+from methods_x11 import move_mouse, click_mouse
 
 
 class GridStates:
@@ -61,8 +62,8 @@ def _parse_xrandr_output(output):
 
 
 def _create_grid_windows():
-    global GRID_DATA
-    for key, monitor in GRID_DATA["monitors"].items():
+    gridData = _get_grid_data()
+    for key, monitor in gridData["monitors"].items():
         grid = grid_base.GridConfig(
             positionX=int(monitor["x"]),
             positionY=int(monitor["y"]),
@@ -75,9 +76,9 @@ def _create_grid_windows():
         gui.deiconify()
         gui.lift()
         gui.focus_force()
-        GRID_DATA["grid_windows"][key] = gui
-    if len(GRID_DATA["grid_windows"]) == 1:
-        GRID_DATA["grid_windows"]["1"].set_single_monitor()
+        gridData["grid_windows"][key] = gui
+    if len(gridData["grid_windows"]) == 1:
+        gridData["grid_windows"]["1"].set_single_monitor()
 
 
 def mouse_grid_dispatcher(params=None):
@@ -92,8 +93,7 @@ def mouse_grid_dispatcher(params=None):
 
 def mouse_grid(attributes):
     """Creates new or reuses grid windows. Can also delegate positioning."""
-    global GRID_DATA
-    gridData = GRID_DATA
+    gridData = _get_grid_data()
     pos1 = attributes.get(u"pos1")
     if pos1:
         if len(gridData["monitors"]) > 1:
@@ -112,7 +112,7 @@ def mouse_grid(attributes):
     else:
         print("No position arguments given.")
         gridData["monitor_selected"] = None
-        for window in GRID_DATA["grid_windows"].values():
+        for window in gridData["grid_windows"].values():
             window.refresh()
 
 
@@ -123,20 +123,24 @@ def hide_grids(attributes):
     If excludePosition matches the position of a grid, it is not hidden.
 
     """
-    global GRID_DATA
+    gridData = _get_grid_data()
     print("hide_grids: %s" % attributes)
-    for win in GRID_DATA["grid_windows"].values():
+    for win in gridData["grid_windows"].values():
         gridConfig = win.get_grid()
         gridConfig.reset()
         if win.winfo_viewable():
             win.withdraw()
-    if len(GRID_DATA["monitors"]) > 1:
-        GRID_DATA["monitor_selected"] = None
+    if len(gridData["monitors"]) > 1:
+        gridData["monitor_selected"] = None
 
 
 def go(attributes):
     """Places the mouse at the grid coordinates. Hides the grid."""
     print("go: %s" % attributes)
+    win = _get_active_grid_window()
+    gridConfig = win.get_grid()
+    (x, y) = gridConfig.get_absolute_centerpoint()
+    move_mouse(x, y)
     hide_grids({})
 
 
@@ -224,8 +228,7 @@ def mouse_pos(attributes):
     grid is moved into.
 
     """
-    global GRID_DATA
-    gridData = GRID_DATA
+    gridData = _get_grid_data()
     print("--- mouse_pos ---")
     print("attributes: %s" % attributes)
     firstAttr = 1
@@ -235,22 +238,37 @@ def mouse_pos(attributes):
             return
         gridData["monitor_selected"] = position
         firstAttr = 2
-        for index, window in GRID_DATA["grid_windows"].items():
+        for index, window in gridData["grid_windows"].items():
             if not index == gridData["monitor_selected"]:
                 window.clear()
     print("monitor_selected: %d" % gridData["monitor_selected"])
     print("firstAttr: %d" % firstAttr)
-    win = gridData["grid_windows"][str(gridData["monitor_selected"])]
-    for index in range(firstAttr, 10):
-        position = attributes.get("pos%d" % index)
-        if position:
-            _reposition_grid(win, position)
-    action = attributes.get("action")
-    if action:
-        actions[action]
-        gridData["monitor_selected"] = None
+    win = _get_active_grid_window()
+    if win:
+        for index in range(firstAttr, 10):
+            position = attributes.get("pos%d" % index)
+            if position:
+                _reposition_grid(win, position)
+        action = attributes.get("action")
+        if action:
+            actions[action]
+            gridData["monitor_selected"] = None
+        else:
+            win.refresh()
+
+
+def _get_grid_data():
+    global GRID_DATA
+    return GRID_DATA
+
+
+def _get_active_grid_window():
+    gridData = _get_grid_data()
+    selectedMonitor = gridData["monitor_selected"]
+    if selectedMonitor != None:
+        return gridData["grid_windows"][str(selectedMonitor)]
     else:
-        win.refresh()
+        return None
 
 
 def _reposition_grid(win, section):

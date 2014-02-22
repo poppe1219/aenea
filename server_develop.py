@@ -6,6 +6,7 @@ import jsonrpclib.SimpleJSONRPCServer
 
 import config
 
+mouseGridModule = None
 # Import OS-specific methods.
 if os.name == "nt":
     from methods_win import (get_context, notify_host,  # @UnusedImport
@@ -15,6 +16,13 @@ elif os.name == "posix":
     from methods_x11 import (get_context, notify_host,  # @Reimport
         multiple_actions, list_rpc_commands)  # @Reimport
     import methods_x11 as methodsModule  # @Reimport
+    try:
+        from mouse_grid import mouse_grid_dispatcher
+        import mouse_grid
+        mouseGridModule = mouse_grid
+    except ImportError as e:
+        mouse_grid_dispatcher = lambda params: None
+        print("No mousegrid: %s" % e)
 else:
     raise Exception("OS not supported.")
 
@@ -24,8 +32,9 @@ def setup_server(host, port):
 
     for command in list_rpc_commands():
         server.register_function(methodsModule.__dict__[command])
+    if mouseGridModule:
+        server.register_function(mouseGridModule.mouse_grid_dispatcher)
     server.register_function(multiple_actions)
-
     return server
 
 

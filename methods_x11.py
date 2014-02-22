@@ -8,11 +8,6 @@ try:
         pynotify = None
 except ImportError:
     pass
-try:
-    from mouse_grid import mouse_grid_dispatcher
-except ImportError as e:
-    mouse_grid_dispatcher = lambda params: None
-    print("No mousegrid: %s" % e)
 
 
 _MOUSE_BUTTONS = {
@@ -342,7 +337,6 @@ def list_rpc_commands():
         "server_info": server_info,
         "pause": pause,
         "notify_host": notify_host,
-        "mouse_grid_dispatcher": mouse_grid_dispatcher,
     }
 
 

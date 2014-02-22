@@ -85,7 +85,7 @@ def mouse_grid_dispatcher(params=None):
     method = globals()[methodName]
     print("mouse_grid_dispatcher: %s, arguments: %s" % (methodName, params))
     try:
-        method(params)
+        method(params.get("attributes"))
     except Exception:
         traceback.print_exc()
 
@@ -94,22 +94,21 @@ def mouse_grid(attributes):
     """Creates new or reuses grid windows. Can also delegate positioning."""
     global GRID_DATA
     gridData = GRID_DATA
-    posAttributes = attributes.get("attributes")
-    pos1 = posAttributes.get(u"pos1")
+    pos1 = attributes.get(u"pos1")
     if pos1:
         if len(gridData["monitors"]) > 1:
             print("More than one monitor")
             newAttr = {}
             gridData["monitor_selected"] = pos1
             for i in range(1, 9):
-                value = posAttributes.get("pos%d" % (i + 1))
+                value = attributes.get("pos%d" % (i + 1))
                 if value:
                     newAttr["pos%d" % i] = value
-            newAttr["action"] = posAttributes.get("action")
+            newAttr["action"] = attributes.get("action")
             mouse_pos(newAttr)
-        elif posAttributes.get("pos1"):
+        elif attributes.get("pos1"):
             gridData["monitor_selected"] = 1  # Only one monitor.
-            mouse_pos(posAttributes)
+            mouse_pos(attributes)
     else:
         print("No position arguments given.")
         gridData["monitor_selected"] = None
@@ -231,7 +230,7 @@ def mouse_pos(attributes):
     print("attributes: %s" % attributes)
     firstAttr = 1
     if not gridData["monitor_selected"]:
-        position = gridData["pos1"]
+        position = attributes["pos1"]
         if position > len(gridData["monitors"]):
             return
         gridData["monitor_selected"] = position

@@ -15,7 +15,7 @@ class GridStates:
 GRID_DATA = {
     "grid_windows": {},
     "monitors": {},
-    "mark_position": {},
+    "mark_position": None,
     "monitor_selected": None,
     "grid_state": GridStates.NothingSelected,
 }
@@ -186,9 +186,7 @@ def control_click(attributes):
     (x, y) = _get_active_coordinates()
     hide_grids({})
     move_mouse(x, y)
-#     key_press("",  modifiers=("control",), direction="down")
     click_mouse("left", modifiers=("control",))
-#     key_press("",  modifiers=("control",), direction="up")
 
 
 def shift_click(attributes):
@@ -197,7 +195,10 @@ def shift_click(attributes):
 
     """
     print("shift_click: %s" % attributes)
+    (x, y) = _get_active_coordinates()
     hide_grids({})
+    move_mouse(x, y)
+    click_mouse("left", modifiers=("shift",))
 
 
 def mouse_mark(attributes):
@@ -206,7 +207,11 @@ def mouse_mark(attributes):
 
     """
     print("mouse_mark: %s" % attributes)
+    (x, y) = _get_active_coordinates()
     hide_grids({})
+    move_mouse(x, y)
+    gridData = _get_grid_data()
+    gridData["mark_position"] = [x, y]
 
 
 def mouse_drag(attributes):
@@ -215,7 +220,17 @@ def mouse_drag(attributes):
 
     """
     print("mouse_drag: %s" % attributes)
+    (x, y) = _get_active_coordinates()
     hide_grids({})
+    gridData = _get_grid_data()
+    position = gridData["mark_position"]
+    if position:
+        startX = position[0]
+        startY = position[1]
+        move_mouse(startX, startY)
+        move_mouse(x, y, dragButton="left")
+    else:
+        print("Missing mark position.")
 
 
 actions = {

@@ -336,7 +336,6 @@ def _wrap_mouse_button_drag(button, command):
     newCommand += "xdotool " + command + " && "
     newCommand += "xdotool sleep 0.2 && "
     newCommand += "xdotool mouseup %d" % button
-    print(newCommand)
     return newCommand
 
 

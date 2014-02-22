@@ -330,11 +330,11 @@ def move_mouse(x, y, reference="absolute", proportional=False, phantom=None,
 
 def _wrap_mouse_button_drag(button, command):
     newCommand = ""
-    newCommand += "sleep 0.1 && "
+    newCommand += "sleep 0.2 && "
     newCommand += "xdotool mousedown %d && " % button
     newCommand += "xdotool sleep 0.5 && "
     newCommand += "xdotool " + command + " && "
-    newCommand += "xdotool sleep 0.1 && "
+    newCommand += "xdotool sleep 0.2 && "
     newCommand += "xdotool mouseup %d" % button
     print(newCommand)
     return newCommand

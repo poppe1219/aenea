@@ -34,7 +34,9 @@ class GridConfig:
         xDiff = (self.width - 1) - (columns * stepX)
         yDiff = (self.height - 1) - (columns * stepY)
         self.axisX = self._calculate_one_axis(stepX, columns, xDiff)
+#         print("axis x: ",  self.axisX)
         self.axisY = self._calculate_one_axis(stepY, columns, yDiff)
+#         print("axis y: ",  self.axisY)
 
     def _calculate_one_axis(self, step, columns, diff):
         axis = []
@@ -74,11 +76,13 @@ class GridConfig:
     def recalculate_to_section(self, section):
         coordinates = self._get_coordinates()
         (x1, y1, x2, y2) = coordinates[section]
+#         print("coordinates:", x1, y1, x2, y2)
         self.positionX = self.positionX + x1
         self.positionY = self.positionY + y1
         self.width = x2 - x1
         self.height = y2 - y1
         self._adjust_edges()
+#         print("New position:", self.positionX, self.positionY)
 
     def _adjust_edges(self):
         if self.positionX > (self.monitorPositionX + 2):
@@ -149,7 +153,6 @@ class TransparentWin(tk.Tk):
         self._timestamp = time.time()
         self.deiconify()  # Quirk: Secondary window won't refresh without this.
         self._canvas.delete("all")
-#         self.wm_geometry(self._grid.get_geometry_string())
         self.draw_grid(monitorSelected)
         self.deiconify()
         self.lift()
@@ -166,23 +169,25 @@ class TransparentWin(tk.Tk):
             self._draw_section_numbers()
 
     def _draw_lines(self):
-        minimumX = 0
-        maximumX = self._grid.width
+        minimumX = self._grid.positionX
+        maximumX = self._grid.positionX + self._grid.width
         axisX = self._grid.axisX
-        minimumY = 0
-        maximumY = self._grid.height
+        minimumY = self._grid.positionY
+        maximumY = self._grid.positionY + self._grid.height
         axisY = self._grid.axisY
         for index, position in enumerate(axisY):
             fill = "black"
             if index % 3:
                 fill = "gray"
-            self._canvas.create_line(minimumX, position, maximumX, position,
+            self._canvas.create_line(minimumX, position + self._grid.positionY,
+                                     maximumX, position + self._grid.positionY,
                                      fill=fill)
         for index, position in enumerate(axisX):
             fill = "black"
             if index % 3:
                 fill = "gray"
-            self._canvas.create_line(position, minimumY, position, maximumY,
+            self._canvas.create_line(position + self._grid.positionX, minimumY,
+                                     position + self._grid.positionX, maximumY,
                                      fill=fill)
         self.update()
 
@@ -193,8 +198,10 @@ class TransparentWin(tk.Tk):
         for y in range(3):
             for x in range(3):
                 self._canvas.create_text(
-                    (axisX[(3 * x) + 1] + axisX[(3 * x) + 2]) / 2,
-                    (axisY[(3 * y) + 1] + axisY[(3 * y) + 2]) / 2,
+                    ((axisX[(3 * x) + 1] + axisX[(3 * x) + 2]) / 2 +
+                     self._grid.positionX),
+                    ((axisY[(3 * y) + 1] + axisY[(3 * y) + 2]) / 2 +
+                     self._grid.positionY),
                     text=str(position), font="Arial 10 bold")
                 position += 1
         self.update()

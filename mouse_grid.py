@@ -114,7 +114,7 @@ def mouse_grid(attributes):
         for window in gridData["grid_windows"].values():
             gridConfig = window.get_grid()
             gridConfig.reset()
-            window.refresh()
+            window.refresh(monitorSelected=False)
             mark = gridData["mark_position"]
             if mark:
                 window.draw_mark(mark[0], mark[1])

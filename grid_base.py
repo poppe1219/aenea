@@ -137,13 +137,9 @@ class TransparentWin(tk.Tk):
         self._canvas.pack()
         self._monitorNumberItem = None
         self._timestamp = time.time()
-        self._single_monitor = False
 
     def get_grid(self):
         return self._grid
-
-    def set_single_monitor(self):
-        self._single_monitor = True
 
     def clear(self):
         self.deiconify()  # Quirk: Secondary window won't refresh without this.
@@ -151,7 +147,7 @@ class TransparentWin(tk.Tk):
         self.update()
         self.deiconify()
 
-    def refresh(self, monitorSelected=False):
+    def refresh(self, monitorSelected=True):
         self._timestamp = time.time()
         self.deiconify()  # Quirk: Secondary window won't refresh without this.
         self._canvas.delete("all")
@@ -163,9 +159,9 @@ class TransparentWin(tk.Tk):
         self.focus_set()  # Really focus.
         self.focus()  # Really really focus.
 
-    def draw_grid(self, monitorSelected=False):
+    def draw_grid(self, monitorSelected=True):
         self._draw_lines()
-        if not monitorSelected and self._grid.width == self._grid.monitorWidth:
+        if not monitorSelected:
             self.draw_monitor_number()
         elif self._grid.width > 80 and self._grid.height > 80:
             self._draw_section_numbers()
@@ -192,7 +188,6 @@ class TransparentWin(tk.Tk):
 
     def _draw_lines(self):
         (relativeX, relativeY) = self._grid.get_relative_position()
-#         print("relativeX, relativeY:", relativeX, relativeY)
         minimumX = relativeX
         maximumX = relativeX + self._grid.width
         axisX = self._grid.axisX
@@ -236,12 +231,11 @@ class TransparentWin(tk.Tk):
         self.update()
 
     def draw_monitor_number(self):
-        if self._single_monitor == False:
-            positionX, positionY = self._grid.get_relative_center_point()
-            self._monitorNumberItem = self._canvas.create_text(positionX,
-                positionY, fill="#aaaaaa", text=str(self._grid.monitorNum),
-                font="Arial 100 bold")
-            self.update()
+        positionX, positionY = self._grid.get_relative_center_point()
+        self._monitorNumberItem = self._canvas.create_text(positionX,
+            positionY, fill="#aaaaaa", text=str(self._grid.monitorNum),
+            font="Arial 100 bold")
+        self.update()
 
     def exit(self):
         self.destroy()

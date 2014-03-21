@@ -143,12 +143,16 @@ class AeneaClient(tk.Tk):
         self.bind("<Any KeyPress>", lambda event: self.send_key(event.keysym))
         self.button1.config(state=tk.DISABLED)
         self.button2.config(state=tk.NORMAL)
+        # Lock window, avoids accidentally closing/minimizing/maximizing.
+        self.overrideredirect(True)
 
     def stop_capture(self):
         self.log("Stopping capture")
         self.bind("<Any KeyPress>", self.dummy_event)
         self.button1.config(state=tk.NORMAL)
         self.button2.config(state=tk.DISABLED)
+        # Unlock window.
+        self.overrideredirect(False)
 
     def dummy_event(self, event):
         pass

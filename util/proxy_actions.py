@@ -3,11 +3,13 @@
 
 import os
 import pyparsing
-
+import win32con
+import win32api
 import communications
 import config
 
 communication = communications.Proxy(config.HOST, config.PORT)
+
 
 try:
   import dragonfly
@@ -122,7 +124,11 @@ class ProxyKey(ProxyBase, dragonfly.DynStrActionBase):
 
   def _execute_events(self, commands):
     communication.execute_batch(commands)
+    notify_client_window()
 
+
+def notify_client_window():
+    win32api.keybd_event(win32con.VK_SCROLL, 0, 0, 0)
 ################################################################################
 # Text
 
@@ -132,6 +138,7 @@ class ProxyText(ProxyBase, dragonfly.DynStrActionBase):
 
   def _execute_events(self, events):
     communication.server.write_text(text=events)
+    notify_client_window()
 
 ################################################################################
 # Mouse

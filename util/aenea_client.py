@@ -41,9 +41,9 @@ class AeneaClient(tk.Tk):
         self.buffer_lock = threading.Lock()
         self.buffer_ready = threading.Condition(self.buffer_lock)
         self.aenea_worker_active = False
+        self.dragonflyCmdHasRun = False
         self.wm_title("Aenea client - Dictation capturing")
         self.geometry('400x600+400+0')
-        self.overrideredirect(True)
         self.wait_visibility(self)
         note = ttk.Notebook(self)
         self.tab1 = tk.Frame(note)
@@ -161,7 +161,10 @@ class AeneaClient(tk.Tk):
         if self.display_entered_text.get():
             self.tab1.text1.insert(tk.END, (key if key != 'space' else ' '))
             self.tab1.text1.see(tk.END)  # Scroll to end.
-        if key in IGNORED_KEYS:
+        if key == "Scroll_Lock":
+            self.dragonflyCmdHasRun = True
+            return
+        elif key in IGNORED_KEYS:
             return
         key = TRANSLATE_KEYS.get(key, key)
 
@@ -194,6 +197,10 @@ class AeneaClient(tk.Tk):
             self.client_proxy = communications.BatchProxy()
 
             self.buffer_lock.release()
+
+            if text == [' '] and self.dragonflyCmdHasRun == True:
+                text = []
+                self.dragonflyCmdHasRun = False
 
             # Add text to batch buffer
             if text:

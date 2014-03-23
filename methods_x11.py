@@ -358,6 +358,34 @@ def flush_xdotool(actions):
         del actions[:]
 
 
+def switch_to_window(windowName):
+    print("Trying to switch to:", windowName)
+    apps = {}
+    try:
+        cmd = r"""search --name '\S' | xargs -i xwininfo -id {} -stats -wm | tr '\n' '#' | sed -e 's/#xwininfo: Window id: \([x0-9a-f]*\) /\n\1 TITLE:/g' -e 's/##  Absolute upper-left X:[-a-zA-Z0-9#:() ]*Map State: \([a-zA-Z]*\)/ STATE:\1/g' -e 's/#  Override Redirect State:[-a-zA-Z0-9#:()+" ]*Window type:#[ ]*\([a-zA-Z]*\)#[-a-zA-Z0-9#:()+" ]*Frame extents:[-+0-9, ]*##/ TYPE:\1/g' -e 's/#  Override Redirect State:[-a-zA-Z0-9#:()+" ]* Process id:[-a-zA-Z0-9() ]*##//g' -e 's/#  Override Redirect State:[-a-zA-Z0-9#:()+" ]*No window manager hints defined[-a-zA-Z0-9#:()+" ]*Frame extents:[-+0-9, ]*##//g' | grep 'STATE:IsViewable TYPE:Normal'"""  # @IgnorePep8
+        result = read_command(cmd)
+        for line in result.split("\n"):
+            if line:
+                wid, rest1 = line.split(' TITLE:"')
+                title, rest2 = rest1.split('" STATE:')
+                apps[title.lower()] = wid
+        applicationId = None
+        for key in apps.keys():
+            if windowName.lower() in key:
+                applicationId = apps[key]
+                break
+        if not applicationId:
+            windowName = windowName.replace(" ", "")
+            for key in apps.keys():
+                if windowName.lower() in key:
+                    applicationId = apps[key]
+                    break
+        if applicationId:
+            run_command("windowactivate --sync %s" % applicationId)
+    except Exception as e:
+        print(e)
+
+
 def list_rpc_commands():
     return {
         "get_context": get_context,
@@ -368,6 +396,7 @@ def list_rpc_commands():
         "server_info": server_info,
         "pause": pause,
         "notify_host": notify_host,
+        "switch_to_window": switch_to_window,
     }
 
 

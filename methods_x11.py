@@ -10,6 +10,10 @@ except ImportError:
     pass
 
 
+LAST_SELECTED_APP = None
+PREVIOUS_COMMAND = None
+
+
 _MOUSE_BUTTONS = {
     "left": 1,
     "middle": 2,
@@ -241,6 +245,7 @@ def key_press(key, modifiers=(), direction="press", count=1, count_delay=0,
         _xdotool.extend(keys)
     else:
         run_command(delay + " ".join(keys))
+    _command_has_run("key_press")
 
 
 def notify_host(message):
@@ -257,6 +262,7 @@ def write_text(text, _xdotool=None):
     if text:
         flush_xdotool(_xdotool)
         write_command(text, arguments="type --file - --delay 0")
+        _command_has_run("write_text")
 
 
 def click_mouse(button, direction="click", count=1, count_delay=None,
@@ -286,6 +292,7 @@ def click_mouse(button, direction="click", count=1, count_delay=None,
         _xdotool.append(command)
     else:
         run_command(command)
+    _command_has_run("click_mouse")
 
 
 def _wrap_modifiers(modifierList, command):
@@ -359,31 +366,68 @@ def flush_xdotool(actions):
 
 
 def switch_to_window(windowName):
+    global LAST_SELECTED_APP
+    windowName = windowName.lower()
     print("Trying to switch to:", windowName)
     apps = {}
+    cmd = (r"search --name '\S' | "
+        r"xargs -i xwininfo -id {} -stats -wm | "
+        r"tr '\n' '#' | "
+        r"sed -e 's/#xwininfo: Window id: \([x0-9a-f]*\) /\n\1 TITLE:/g' "
+        r"-e 's/##  Absolute upper-left X:[-a-zA-Z0-9#:() ]*Map State: "
+        r"\([a-zA-Z]*\)/ STATE:\1/g' "
+        r"""-e 's/#  Override Redirect State:[-a-zA-Z0-9#:()+" ]*"""
+        r"""Window type:#[ ]*\([a-zA-Z]*\)#[-a-zA-Z0-9#:()+" ]*"""
+        r"Frame extents:[-+0-9, ]*##/ TYPE:\1/g' -e 's/#  "
+        r"""Override Redirect State:[-a-zA-Z0-9#:()+" ]* """
+        r"Process id:[-a-zA-Z0-9() ]*##//g' -e 's/#  "
+        r"""Override Redirect State:[-a-zA-Z0-9#:()+" ]*"""
+        r"""No window manager hints defined[-a-zA-Z0-9#:()+" ]*"""
+        r"Frame extents:[-+0-9, ]*##//g' | "
+        r"grep 'STATE:IsViewable TYPE:Normal'"
+    )
     try:
-        cmd = r"""search --name '\S' | xargs -i xwininfo -id {} -stats -wm | tr '\n' '#' | sed -e 's/#xwininfo: Window id: \([x0-9a-f]*\) /\n\1 TITLE:/g' -e 's/##  Absolute upper-left X:[-a-zA-Z0-9#:() ]*Map State: \([a-zA-Z]*\)/ STATE:\1/g' -e 's/#  Override Redirect State:[-a-zA-Z0-9#:()+" ]*Window type:#[ ]*\([a-zA-Z]*\)#[-a-zA-Z0-9#:()+" ]*Frame extents:[-+0-9, ]*##/ TYPE:\1/g' -e 's/#  Override Redirect State:[-a-zA-Z0-9#:()+" ]* Process id:[-a-zA-Z0-9() ]*##//g' -e 's/#  Override Redirect State:[-a-zA-Z0-9#:()+" ]*No window manager hints defined[-a-zA-Z0-9#:()+" ]*Frame extents:[-+0-9, ]*##//g' | grep 'STATE:IsViewable TYPE:Normal'"""  # @IgnorePep8
         result = read_command(cmd)
         for line in result.split("\n"):
             if line:
                 wid, rest1 = line.split(' TITLE:"')
-                title, rest2 = rest1.split('" STATE:')
-                apps[title.lower()] = wid
-        applicationId = None
-        for key in apps.keys():
-            if windowName.lower() in key:
-                applicationId = apps[key]
-                break
-        if not applicationId:
-            windowName = windowName.replace(" ", "")
-            for key in apps.keys():
-                if windowName.lower() in key:
-                    applicationId = apps[key]
-                    break
-        if applicationId:
-            run_command("windowactivate --sync %s" % applicationId)
+                title, rest2 = rest1.split('" STATE:')  # @UnusedVariable
+                apps[wid] = title.lower()
+        matches = []
+        _match_title(windowName, apps, matches)
+        windowName = windowName.replace(" ", "")
+        _match_title(windowName, apps, matches)
+        matches.sort()
+        import json
+        print "apps: ", json.dumps(apps, indent=4)
+        print "matches:", matches
+        appId = None
+        if len(matches) > 1 and LAST_SELECTED_APP != None:
+            if not LAST_SELECTED_APP in matches:
+                appId = matches[0]
+            else:
+                index = matches.index(LAST_SELECTED_APP)
+                index += 1
+                if index > (len(matches) - 1):
+                    index = 0
+                appId = matches[index]
+        else:
+            appId = matches[0]
+        if appId:
+            run_command("windowactivate --sync %s" % appId)
+            LAST_SELECTED_APP = appId
+            print("LAST_SELECTED_APP:", LAST_SELECTED_APP)
     except Exception as e:
         print(e)
+    _command_has_run("switch_to_window")
+
+
+def _match_title(title, apps, matches):
+    for key, value in apps.items():
+        if title in value:  # See if the decide title exist in existing title.
+            wid = key
+            if not wid in matches:
+                matches.append(key)
 
 
 def list_rpc_commands():
@@ -415,3 +459,11 @@ def multiple_actions(actions):
         else:
             break
     flush_xdotool(xdotool)
+    _command_has_run("multiple_actions")
+
+
+def _command_has_run(cmd):
+    global PREVIOUS_COMMAND
+    PREVIOUS_COMMAND = cmd
+    if cmd != "switch_to_window":
+        LAST_SELECTED_APP = None  # Reset value for all other commands.

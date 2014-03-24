@@ -398,25 +398,40 @@ def switch_to_window(windowName):
         windowName = windowName.replace(" ", "")
         _match_title(windowName, apps, matches)
         matches.sort()
-        import json
-        print "apps: ", json.dumps(apps, indent=4)
-        print "matches:", matches
+        windowId, windowTitle = get_active_window()  # @UnusedVariable
+        currentWindowId = hex(windowId)
+#         import json
+#         print "matches:", json.dumps(matches, indent=4)
+#         print "currentWindowId:", currentWindowId
+#         print "LAST_SELECTED_APP:", LAST_SELECTED_APP
         appId = None
-        if len(matches) > 1 and LAST_SELECTED_APP != None:
-            if not LAST_SELECTED_APP in matches:
-                appId = matches[0]
-            else:
-                index = matches.index(LAST_SELECTED_APP)
-                index += 1
-                if index > (len(matches) - 1):
-                    index = 0
-                appId = matches[index]
+        if len(matches) > 1:
+            newAppId = None
+            while not newAppId:  # Loop until next suitable app is found.
+                if not LAST_SELECTED_APP in matches:
+                    newAppId = matches[0]
+                else:  # Find the next suitable match.
+                    index = matches.index(LAST_SELECTED_APP)
+                    index += 1
+                    if index > (len(matches) - 1):
+                        index = 0
+                    newAppId = matches[index]
+                if newAppId == currentWindowId:
+                    # If the new app was already selected, skip to the next.
+                    LAST_SELECTED_APP = currentWindowId
+                    newAppId = None
+            # A new application has been found.
+            appId = newAppId
         else:
-            appId = matches[0]
+            appId = matches[0]  # Only one match was found.
         if appId:
-            run_command("windowactivate --sync %s" % appId)
+            if appId != currentWindowId:  # It was already selected.
+                run_command("windowactivate --sync %s" % appId)
+            else:
+                print "Application already active."
             LAST_SELECTED_APP = appId
-            print("LAST_SELECTED_APP:", LAST_SELECTED_APP)
+        else:
+            print("No match found for '%s'." % windowName)
     except Exception as e:
         print(e)
     _command_has_run("switch_to_window")

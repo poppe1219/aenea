@@ -137,6 +137,10 @@ class ProxyKey(ProxyBase, dragonfly.DynStrActionBase):
     notify_client_window()
 
 
+# Sends a notification to the client window,that a grammar command has been
+# sent to the Linux server, effectively terminating normal dictation.
+# The client then removes the single space character on continued dictation.
+# This removes unnecessary spacing after commands like "enter", "down",etc.
 def notify_client_window():
     win32api.keybd_event(win32con.VK_PAUSE, 0, 0, 0)
 ################################################################################
@@ -189,6 +193,7 @@ class ProxyMouse(ProxyBase, dragonfly.DynStrActionBase):
 
         proxy.click_mouse(button=key, direction=direction, count=repeat,
                           count_delay=pause)
+        notify_client_window()
 
     return proxy._commands
 

@@ -3,8 +3,18 @@
 
 import os
 import pyparsing
-import win32con
-import win32api
+try:
+    import win32con
+    import win32api
+except ImportError:
+    class win32con:
+        VK_SCROLL = 0
+
+    class win32api:
+        @classmethod
+        def keybd_event(cls, a, b, c, d):
+            pass
+
 import communications
 import config
 
@@ -60,7 +70,7 @@ def _make_key_parser():
 def _make_mouse_parser():
   from pyparsing import (Optional, Literal, Word, Group, Keyword,
                          Or, ZeroOrMore, Regex, Suppress)
-  double = Regex(r"\d+(\.\d*)?([eE]\d+)?")
+  double = Regex(r"[-]?\d+(\.\d*)?([eE]\d+)?")
   coords = double + Suppress(Optional(Literal(","))) + double
   integer = Word("0123456789")
   move = (

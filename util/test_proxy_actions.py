@@ -64,6 +64,9 @@ class TestActions(unittest.TestCase):
     ProxyMouse("<7 9>").execute()
     comm.execute_batch.assert_called_with([('move_mouse', (), {'x': 7.0, 'y': 9.0, 'proportional': False, 'reference': 'relative'})])
 
+    ProxyMouse("<-7 -9>").execute()
+    comm.execute_batch.assert_called_with([('move_mouse', (), {'x': -7.0, 'y': -9.0, 'proportional': False, 'reference': 'relative'})])
+
     ProxyMouse("(3, 5)").execute()
     comm.execute_batch.assert_called_with([('move_mouse', (), {'x': 3.0, 'y': 5.0, 'proportional': False, 'reference': 'relative_active'})])
 

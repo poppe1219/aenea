@@ -161,7 +161,7 @@ class AeneaClient(tk.Tk):
         if self.display_entered_text.get():
             self.tab1.text1.insert(tk.END, (key if key != 'space' else ' '))
             self.tab1.text1.see(tk.END)  # Scroll to end.
-        if key == "Scroll_Lock":
+        if key == "Pause":
             self.dragonflyCmdHasRun = True
             return
         elif key in IGNORED_KEYS:

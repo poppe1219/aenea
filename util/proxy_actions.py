@@ -138,7 +138,7 @@ class ProxyKey(ProxyBase, dragonfly.DynStrActionBase):
 
 
 def notify_client_window():
-    win32api.keybd_event(win32con.VK_SCROLL, 0, 0, 0)
+    win32api.keybd_event(win32con.VK_PAUSE, 0, 0, 0)
 ################################################################################
 # Text
 

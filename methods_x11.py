@@ -318,7 +318,7 @@ def move_mouse(x, y, reference="absolute", proportional=False, phantom=None,
     command = _MOUSE_MOVE_COMMANDS[reference]
     if command == "mousemove_active":
         command = "mousemove --window %i" % get_active_window()[0]
-    commands = ["%s --sync %f %f" % (command, x, y)]
+    commands = ["%s --sync -- %f %f" % (command, x, y)]
     if phantom is not None:
         commands.append("click %s" % _MOUSE_BUTTONS[phantom])
         commands.append("mousemove restore")

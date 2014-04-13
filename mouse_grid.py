@@ -76,8 +76,6 @@ def _create_grid_windows():
         gui.lift()
         gui.focus_force()
         gridData["grid_windows"][key] = gui
-    if len(gridData["grid_windows"]) == 1:
-        gridData["grid_windows"]["1"].set_single_monitor()
 
 
 def mouse_grid_dispatcher(params=None):
@@ -109,12 +107,14 @@ def mouse_grid(attributes):
             gridData["monitor_selected"] = 1  # Only one monitor.
             mouse_pos(attributes)
     else:
-        print("No position arguments given.")
-        gridData["monitor_selected"] = None
+        if len(gridData["monitors"]) > 1:
+            gridData["monitor_selected"] = None
+        else:           
+            gridData["monitor_selected"] = 1  # Only one monitor.
         for window in gridData["grid_windows"].values():
             gridConfig = window.get_grid()
             gridConfig.reset()
-            window.refresh(monitorSelected=False)
+            window.refresh(monitorSelected=gridData["monitor_selected"])
             mark = gridData["mark_position"]
             if mark:
                 window.draw_mark(mark[0], mark[1])

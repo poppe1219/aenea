@@ -79,7 +79,7 @@ class AeneaClient(tk.Tk):
         self.button4 = tk.Button(
                 w,
                 text=u"Close",
-                command=self.exit
+                command=self.destroy
             )
         self.button4.pack(side=tk.RIGHT)
 
@@ -224,6 +224,6 @@ if __name__ == "__main__":
     root = AeneaClient(ip, port)
     root.mainloop()
     root.destroy()
-    root.quit()
+    root = None
     print("Exiting Aenea client")
     sys.exit()
